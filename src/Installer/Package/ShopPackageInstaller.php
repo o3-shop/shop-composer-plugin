@@ -35,6 +35,7 @@ class ShopPackageInstaller extends AbstractPackageInstaller
 {
     public const SHOP_SOURCE_DIRECTORY = 'source';
     public const FILE_TO_CHECK_IF_PACKAGE_INSTALLED = 'index.php';
+    public const ENVIRONMENT_FILE = '.env';
     public const SHOP_SOURCE_CONFIGURATION_FILE = 'config.inc.php';
     public const FAVICON_FILE = 'favicon.ico';
     public const OFFLINE_FILE = 'offline.html';
@@ -105,6 +106,7 @@ class ShopPackageInstaller extends AbstractPackageInstaller
     {
         $this->copyShopSourceFromPackageToTarget($packagePath);
         $this->copySetupFiles($packagePath);
+        $this->copyEnvironmentDistFileWithinTarget($packagePath);
         $this->copyConfigurationDistFileWithinTarget();
         $this->copyHtaccessFiles($packagePath);
         $this->copyFaviconFile($packagePath);
@@ -134,6 +136,20 @@ class ShopPackageInstaller extends AbstractPackageInstaller
             $this->getTargetDirectoryOfShopSource(),
             $this->getCombinedFilters($filtersToApply)
         );
+    }
+
+    /**
+     * Copy shop's configuration file from distribution file.
+     */
+    private function copyEnvironmentDistFileWithinTarget($packagePath)
+    {
+        $packageDirectoryOfShopSource = $this->getPackageDirectoryOfShopSource($packagePath);
+        $setupPath = Path::join($packageDirectoryOfShopSource, self::SHOP_SOURCE_SETUP_DIRECTORY);
+        $envSourcePath = Path::join($setupPath, self::ENVIRONMENT_FILE.self::DISTRIBUTION_FILE_EXTENSION_MARK);
+        $pathToEnv       = Path::join(getcwd(), self::ENVIRONMENT_FILE);
+        $pathToEnvDist   = $pathToEnv . self::DISTRIBUTION_FILE_EXTENSION_MARK;
+        $this->copyFileIfIsMissing($envSourcePath, $pathToEnvDist);
+        $this->copyFileIfIsMissing($pathToEnvDist, $pathToEnv);
     }
 
     /**
