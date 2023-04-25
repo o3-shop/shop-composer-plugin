@@ -29,7 +29,7 @@ Requirements
 ------------
 
 * master branch is compatible with O3-Shop compilation master
-* b-6.x branch is compatible with O3-Shop compilation 1.x (>=1.0.x)
+* b-1.x branch is compatible with O3-Shop compilation 1.x (>=1.0.x)
 
 Bugs and Issues
 ---------------

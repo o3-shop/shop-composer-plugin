@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## unreleased
+
+## [v1.1.0] - 2023-04-25
+
+### Added
+- copy dist env file to target directory
+
 ## [v1.0.0] - 2023-03-05
 
 # [O3-Shop]
@@ -114,7 +121,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - [Add robot exclusion files filter](https://bugs.oxid-esales.com/view.php?id=6703)
 
-[v1.0.0]: https://github.com/o3-shop/shop_composer_plugin/releases/tag/v1.0.0
+[v1.1.0]: https://gitlab.o3-shop.com/o3/shop-composer-plugin/-/compare/v1.0.0...v1.1.0
+[v1.0.0]: https://gitlab.o3-shop.com/o3/shop-composer-plugin/-/tags/v1.0.0
 [O3-Shop]: https://www.o3-shop.com/
 [5.2.2]: https://github.com/OXID-eSales/oxideshop_composer_plugin/compare/v5.2.1...v5.2.2
 [5.2.1]: https://github.com/OXID-eSales/oxideshop_composer_plugin/compare/v5.2.0...v5.2.1
