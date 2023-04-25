@@ -24,7 +24,7 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "o3-shop/shop-ce": "^1.2.0",
+    "o3-shop/shop-ce": "^1.2.0 || dev-dev-b-1.x",
     "composer-plugin-api": "^1.0 || ^2.0",
     "symfony/filesystem": "*",
     "webmozart/glob": "^4.1",
