@@ -34,4 +34,4 @@ Requirements
 Bugs and Issues
 ---------------
 
-If you experience any bugs or issues, please report them in the section **O3-Shop (all versions)** of https://bugs.o3-shop.com.
+If you experience any bugs or issues, please report them in the section **O3-Shop (all versions)** of [https://github.com/o3-shop/o3-shop/issues](https://github.com/o3-shop/o3-shop/issues).
