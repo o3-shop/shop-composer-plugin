@@ -52,5 +52,8 @@
   },
   "replace": {
     "oxid-esales/oxideshop-composer-plugin": "5.2.2"
+  },
+  "archive": {
+    "exclude": [".next-bump"]
   }
 }
