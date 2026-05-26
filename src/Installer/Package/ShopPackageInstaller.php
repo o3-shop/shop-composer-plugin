@@ -239,7 +239,7 @@ class ShopPackageInstaller extends AbstractPackageInstaller
             return;
         }
 
-        $this->getIO()->write('<info>Copying updated bootstrap.php from package to source directory.</info>');
+        $this->getIO()->write('<warning>bootstrap.php has been overwritten by the shop package update. Any local changes to this file have been replaced. Starting with v1.6.2, use bootstrap.custom.php for project-specific customizations.</warning>');
         CopyGlobFilteredFileManager::copy($source, $target);
     }
 
