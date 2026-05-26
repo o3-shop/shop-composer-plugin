@@ -239,6 +239,7 @@ class ShopPackageInstaller extends AbstractPackageInstaller
             return;
         }
 
+        $this->getIO()->write('<info>Copying updated bootstrap.php from package to source directory.</info>');
         CopyGlobFilteredFileManager::copy($source, $target);
     }
 
