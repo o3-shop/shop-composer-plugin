@@ -83,13 +83,20 @@ class ShopPackageInstaller extends AbstractPackageInstaller
                     '- ' . $this->getTargetDirectoryOfShopSource() . PHP_EOL .
                     'Do you want to overwrite them? (y/N) ';
 
-        $this->copyBootstrapFile($packagePath);
+        $bootstrapChanged = $this->bootstrapFileChanged($packagePath);
 
         if ($this->askQuestionIfNotInstalled($question)) {
             $this->writeCopyingMessage();
             $this->copyPackage($packagePath);
+            if ($bootstrapChanged) {
+                $this->writeBootstrapOverwriteWarning();
+            }
             $this->writeDoneMessage();
         } else {
+            if ($bootstrapChanged) {
+                $this->copyBootstrapFile($packagePath);
+                $this->writeBootstrapOverwriteWarning();
+            }
             $this->writeSkippedMessage();
         }
     }
@@ -223,6 +230,14 @@ class ShopPackageInstaller extends AbstractPackageInstaller
      *
      * @param string $packagePath Absolute path which points to shop's package directory.
      */
+    private function bootstrapFileChanged(string $packagePath): bool
+    {
+        $source = Path::join($this->getPackageDirectoryOfShopSource($packagePath), self::BOOTSTRAP_FILE);
+        $target = Path::join($this->getTargetDirectoryOfShopSource(), self::BOOTSTRAP_FILE);
+
+        return !file_exists($target) || md5_file($source) !== md5_file($target);
+    }
+
     /**
      * Always copy bootstrap.php from the package to the source directory, even
      * when the user skips the general overwrite prompt. The file defines
@@ -235,12 +250,12 @@ class ShopPackageInstaller extends AbstractPackageInstaller
         $source = Path::join($this->getPackageDirectoryOfShopSource($packagePath), self::BOOTSTRAP_FILE);
         $target = Path::join($this->getTargetDirectoryOfShopSource(), self::BOOTSTRAP_FILE);
 
-        if (file_exists($target) && md5_file($source) === md5_file($target)) {
-            return;
-        }
-
-        $this->getIO()->write('<warning>bootstrap.php has been overwritten by the shop package update. Any local changes to this file have been replaced. Starting with v1.6.2, use bootstrap.custom.php for project-specific customizations.</warning>');
         CopyGlobFilteredFileManager::copy($source, $target);
+    }
+
+    private function writeBootstrapOverwriteWarning(): void
+    {
+        $this->getIO()->write('<warning>bootstrap.php has been overwritten by the shop package update. Any local changes to this file have been replaced. Starting with v1.6.2, use bootstrap.custom.php for project-specific customizations.</warning>');
     }
 
     private function copySetupFiles($packagePath)
