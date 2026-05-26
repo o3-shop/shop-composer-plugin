@@ -41,6 +41,7 @@ class ShopPackageInstaller extends AbstractPackageInstaller
     public const OFFLINE_FILE = 'offline.html';
     public const DISTRIBUTION_FILE_EXTENSION_MARK = '.dist';
     public const SHOP_SOURCE_SETUP_DIRECTORY = 'Setup';
+    public const BOOTSTRAP_FILE = 'bootstrap.php';
     public const HTACCESS_FILTER = '**/.htaccess';
     public const ROBOTS_EXCLUSION_FILTER = '**/robots.txt';
     public const SETUP_FILES_FILTER = self::SHOP_SOURCE_SETUP_DIRECTORY
@@ -81,6 +82,8 @@ class ShopPackageInstaller extends AbstractPackageInstaller
         $question = 'All files in the following directories will be overwritten:' . PHP_EOL .
                     '- ' . $this->getTargetDirectoryOfShopSource() . PHP_EOL .
                     'Do you want to overwrite them? (y/N) ';
+
+        $this->copyBootstrapFile($packagePath);
 
         if ($this->askQuestionIfNotInstalled($question)) {
             $this->writeCopyingMessage();
@@ -220,6 +223,25 @@ class ShopPackageInstaller extends AbstractPackageInstaller
      *
      * @param string $packagePath Absolute path which points to shop's package directory.
      */
+    /**
+     * Always copy bootstrap.php from the package to the source directory, even
+     * when the user skips the general overwrite prompt. The file defines
+     * installation-wide path constants that must stay in sync with the package version.
+     *
+     * @param string $packagePath
+     */
+    private function copyBootstrapFile(string $packagePath): void
+    {
+        $source = Path::join($this->getPackageDirectoryOfShopSource($packagePath), self::BOOTSTRAP_FILE);
+        $target = Path::join($this->getTargetDirectoryOfShopSource(), self::BOOTSTRAP_FILE);
+
+        if (file_exists($target) && md5_file($source) === md5_file($target)) {
+            return;
+        }
+
+        CopyGlobFilteredFileManager::copy($source, $target);
+    }
+
     private function copySetupFiles($packagePath)
     {
         $packageDirectoryOfShopSource = $this->getPackageDirectoryOfShopSource($packagePath);
