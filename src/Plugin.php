@@ -31,9 +31,7 @@ use Composer\Plugin\PluginInterface;
 use OxidEsales\ComposerPlugin\Installer\Package\AbstractPackageInstaller;
 use OxidEsales\ComposerPlugin\Installer\PackageInstallerTrigger;
 use OxidEsales\EshopCommunity\Internal\Container\BootstrapContainerFactory;
-use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidEsales\EshopCommunity\Internal\Framework\DIContainer\Service\ShopStateServiceInterface;
-use OxidEsales\EshopCommunity\Internal\Framework\Module\Configuration\Dao\ProjectConfigurationDaoInterface;
 use OxidEsales\Facts\Facts;
 
 /**
@@ -164,22 +162,28 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         return $shopStateService->isLaunched();
     }
 
+    /**
+     * Generates the default project configuration in a dedicated PHP subprocess.
+     *
+     * Compiling the shop DI container inside composer's own runtime breaks when
+     * shop-ce upgrades itself in the same `composer update` (the runtime still
+     * holds the pre-update classes/opcode cache), which previously forced a
+     * second run. A fresh subprocess always loads the just-installed shop-ce
+     * code, mirroring how MigrationsRunner isolates its work.
+     */
     private function generateDefaultProjectConfigurationIfMissing(): void
     {
-        $bootstrapContainer = BootstrapContainerFactory::getBootstrapContainer();
-        $projectConfigurationDao = $bootstrapContainer->get(ProjectConfigurationDaoInterface::class);
+        $script = __DIR__ . '/../bin/generate-project-configuration.php';
+        $vendorDir = $this->composer->getConfig()->get('vendor-dir');
 
-        if ($projectConfigurationDao->isConfigurationEmpty()) {
-            if ($this->isShopLaunched()) {
-                $container = ContainerFactory::getInstance()->getContainer();
-                $container
-                    ->get('oxid_esales.module.install.service.launched_shop_project_configuration_generator')
-                    ->generate();
-            } else {
-                $bootstrapContainer
-                    ->get('oxid_esales.module.install.service.installed_shop_project_configuration_generator')
-                    ->generate();
-            }
+        $command = implode(' ', array_map('escapeshellarg', [PHP_BINARY, $script, $vendorDir]));
+
+        passthru($command, $exitCode);
+
+        if ($exitCode !== 0) {
+            throw new \RuntimeException(
+                'Generating the default project configuration failed (exit code ' . $exitCode . ').'
+            );
         }
     }
 }
