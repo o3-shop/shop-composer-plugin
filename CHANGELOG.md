@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## unreleased
 
+### Fixed
+- Generate the default project configuration in a dedicated PHP subprocess so a
+  single `composer update` succeeds when o3-shop/shop-ce upgrades itself. The
+  previous in-process container compile ran inside composer's own runtime, which
+  still held the pre-update shop classes, forcing the update to be run twice.
+  The subprocess is spawned with Symfony's `Process` component (no shell), so
+  argument quoting no longer depends on the platform.
+
 ## [v1.1.0] - 2023-04-25
 
 ### Added

@@ -31,10 +31,9 @@ use Composer\Plugin\PluginInterface;
 use OxidEsales\ComposerPlugin\Installer\Package\AbstractPackageInstaller;
 use OxidEsales\ComposerPlugin\Installer\PackageInstallerTrigger;
 use OxidEsales\EshopCommunity\Internal\Container\BootstrapContainerFactory;
-use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidEsales\EshopCommunity\Internal\Framework\DIContainer\Service\ShopStateServiceInterface;
-use OxidEsales\EshopCommunity\Internal\Framework\Module\Configuration\Dao\ProjectConfigurationDaoInterface;
 use OxidEsales\Facts\Facts;
+use Symfony\Component\Process\Process;
 
 /**
  * Class Plugin.
@@ -43,6 +42,9 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 {
     /** @var Composer */
     private $composer;
+
+    /** @var IOInterface */
+    private $io;
 
     /** @var PackageInstallerTrigger */
     private $packageInstallerTrigger;
@@ -73,6 +75,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $composer->getInstallationManager()->addInstaller($packageInstallerTrigger);
 
         $this->composer = $composer;
+        $this->io = $io;
         $this->packageInstallerTrigger = $packageInstallerTrigger;
 
         $extraSettings = $this->composer->getPackage()->getExtra();
@@ -164,22 +167,36 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         return $shopStateService->isLaunched();
     }
 
+    /**
+     * Generates the default project configuration in a dedicated PHP subprocess.
+     *
+     * Compiling the shop DI container inside composer's own runtime breaks when
+     * shop-ce upgrades itself in the same `composer update` (the runtime still
+     * holds the pre-update classes/opcode cache), which previously forced a
+     * second run. A fresh subprocess always loads the just-installed shop-ce
+     * code, mirroring how MigrationsRunner isolates its work.
+     */
     private function generateDefaultProjectConfigurationIfMissing(): void
     {
-        $bootstrapContainer = BootstrapContainerFactory::getBootstrapContainer();
-        $projectConfigurationDao = $bootstrapContainer->get(ProjectConfigurationDaoInterface::class);
+        $process = new Process([
+            PHP_BINARY,
+            __DIR__ . '/../bin/generate-project-configuration.php',
+            $this->composer->getConfig()->get('vendor-dir'),
+        ]);
+        $process->setTimeout(null);
 
-        if ($projectConfigurationDao->isConfigurationEmpty()) {
-            if ($this->isShopLaunched()) {
-                $container = ContainerFactory::getInstance()->getContainer();
-                $container
-                    ->get('oxid_esales.module.install.service.launched_shop_project_configuration_generator')
-                    ->generate();
+        $process->run(function (string $type, string $buffer): void {
+            if ($type === Process::ERR) {
+                $this->io->writeError($buffer, false);
             } else {
-                $bootstrapContainer
-                    ->get('oxid_esales.module.install.service.installed_shop_project_configuration_generator')
-                    ->generate();
+                $this->io->write($buffer, false);
             }
+        });
+
+        if (!$process->isSuccessful()) {
+            throw new \RuntimeException(
+                'Generating the default project configuration failed (exit code ' . $process->getExitCode() . ').'
+            );
         }
     }
 }
