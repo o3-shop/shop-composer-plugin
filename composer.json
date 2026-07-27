@@ -27,6 +27,7 @@
     "o3-shop/shop-ce": "^1.2.0 || dev-*",
     "composer-plugin-api": "^1.0 || ^2.0",
     "symfony/filesystem": "*",
+    "symfony/process": "*",
     "webmozart/glob": "^4.1",
     "webmozart/path-util": "^2.3"
   },

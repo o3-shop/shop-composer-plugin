@@ -33,6 +33,7 @@ use OxidEsales\ComposerPlugin\Installer\PackageInstallerTrigger;
 use OxidEsales\EshopCommunity\Internal\Container\BootstrapContainerFactory;
 use OxidEsales\EshopCommunity\Internal\Framework\DIContainer\Service\ShopStateServiceInterface;
 use OxidEsales\Facts\Facts;
+use Symfony\Component\Process\Process;
 
 /**
  * Class Plugin.
@@ -41,6 +42,9 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 {
     /** @var Composer */
     private $composer;
+
+    /** @var IOInterface */
+    private $io;
 
     /** @var PackageInstallerTrigger */
     private $packageInstallerTrigger;
@@ -71,6 +75,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $composer->getInstallationManager()->addInstaller($packageInstallerTrigger);
 
         $this->composer = $composer;
+        $this->io = $io;
         $this->packageInstallerTrigger = $packageInstallerTrigger;
 
         $extraSettings = $this->composer->getPackage()->getExtra();
@@ -173,16 +178,24 @@ class Plugin implements PluginInterface, EventSubscriberInterface
      */
     private function generateDefaultProjectConfigurationIfMissing(): void
     {
-        $script = __DIR__ . '/../bin/generate-project-configuration.php';
-        $vendorDir = $this->composer->getConfig()->get('vendor-dir');
+        $process = new Process([
+            PHP_BINARY,
+            __DIR__ . '/../bin/generate-project-configuration.php',
+            $this->composer->getConfig()->get('vendor-dir'),
+        ]);
+        $process->setTimeout(null);
 
-        $command = implode(' ', array_map('escapeshellarg', [PHP_BINARY, $script, $vendorDir]));
+        $process->run(function (string $type, string $buffer): void {
+            if ($type === Process::ERR) {
+                $this->io->writeError($buffer, false);
+            } else {
+                $this->io->write($buffer, false);
+            }
+        });
 
-        passthru($command, $exitCode);
-
-        if ($exitCode !== 0) {
+        if (!$process->isSuccessful()) {
             throw new \RuntimeException(
-                'Generating the default project configuration failed (exit code ' . $exitCode . ').'
+                'Generating the default project configuration failed (exit code ' . $process->getExitCode() . ').'
             );
         }
     }
